@@ -190,7 +190,7 @@ function cfAddVoiceFile($filename, $title = '') {
 
 } // end function - cfAddVoiceFile
 
-echo "New sound ID: $soundId\n";
+//echo "New sound ID: $soundId\n";
 
 
 /**

@@ -106,8 +106,7 @@ function callfire_menu() {
 	$items['admin/settings/callfire'] = array(
 		'title' => t('CallFire'),
 		'description' => t('Basic settings of the CallFire module, and individual enabling of services.'),
-		'callback' => 'drupal_get_form',
-		'callback arguments' => 'callfire_settings_form',
+		'page callback' => 'callfire_settings_overview',
 		'access arguments' => array('access administration pages'),
 		'type' => MENU_NORMAL_ITEM,
 	);
@@ -116,6 +115,7 @@ function callfire_menu() {
   $items['admin/settings/callfire/overview'] = array(
     'title' => 'Overview',
     'description' => 'View the general CallFire settings.',
+		'page callback' => 'callfire_settings_overview',
     'access arguments' => array('access administration pages'),
     'weight' => -10,
     'type' => MENU_DEFAULT_LOCAL_TASK,
@@ -137,7 +137,8 @@ function callfire_menu() {
   $items['admin/settings/callfire/services'] = array(
     'title' => 'Services',
     'description' => 'Enable and disable CallFire services and their features.',
-    'page arguments' => array('callfire_services_form'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array ('callfire_services_form'),
     'access arguments' => array('access administration pages'),
     'weight' => 0,
     'type' => MENU_LOCAL_TASK,
@@ -206,6 +207,19 @@ function callfire_services_form() {
       }
     }
   }
+	else {
+		// no services found; let the admin know this
+		$form['callfire_no_services'] = array(
+      '#type' => 'item',
+      '#summary callback' => 'summarize_element',
+      '#summary' => '<b>No CallFire service modules appear to be loaded.</b>',
+			'#description' => t('You will need to enable one or more CallFire service modules (such as CF SMS) to make use of the CallFire module.') . '<br /><br />',
+      '#value' => '<b>ATTENTION: No CallFire service modules appear to be loaded.</b>',
+    );
+
+		// return early, no need to add standard buttons to the form
+		return $form;
+	}
 
   return system_settings_form($form);
 }
