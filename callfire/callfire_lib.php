@@ -401,7 +401,7 @@ function _new_cf_soap_client($version = '') {
     'password'     => _get_cf_password());
 
   if ($version !== '') {
-    $client_params['soap_version'] => $version;
+    $client_params['soap_version'] = $version;
   }
   
   $client = new SoapClient(CALLFIRE_WSDL_SOAP_URL, $client_params);

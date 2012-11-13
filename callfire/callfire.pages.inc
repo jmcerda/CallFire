@@ -277,7 +277,7 @@ function callfire_mail($to, $txt, $priority = 3) {
  * Returns the string of the 'From' email address to be used when
  * sending out email alerts from the module.
  */
-function _get_bp_email_from_address() {
+function _get_cf_email_from_address() {
 
   //return uc_store_email_from();
 }
