@@ -12,6 +12,6 @@ WARNING: This code is currently ALPHA. It has not yet been tested, and will have
 
    ----------
 
-CALLFIRE is a communication module intended for use with version 6.x of Drupal, and version 2.x of Ubercart.
+CALLFIRE is a communication module intended for use with version 6.x of Drupal, and (optionally) version 2.x of Ubercart.
 
 This module simplifies access to CallFire's API for businesses that have signed up with them (at http://callfire.com) to use their services. The module primarily enables other, service-specific modules to access features such as the CallFire's SMS capabilities, and as such has very few immediate-use capabilities without other modules.
