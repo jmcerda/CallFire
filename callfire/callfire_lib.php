@@ -23,7 +23,7 @@ function cfPost($url, $user, $password, $params = array(),
 	curl_setopt($http, CURLOPT_SSL_VERIFYPEER, false);
 	curl_setopt($http, CURLOPT_RETURNTRANSFER, true);
 	curl_setopt($http, CURLOPT_URL, $url);
-	curl_setopt($http, CURLOPT_POST, $true);
+	curl_setopt($http, CURLOPT_POST, true);
 	curl_setopt($http, CURLOPT_POSTFIELDS, $query);
 	curl_setopt($http, CURLOPT_HTTPHEADER, array(
 	  "Content-Type: $contentType",
