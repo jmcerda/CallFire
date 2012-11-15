@@ -39,6 +39,14 @@ function callfire_settings_form() {
     '#summary' => t('CallFire password is currently set as: <br /> %password', array('%password' => variable_get('callfire_password', ''))),
 		'#description' => t('The app password provided by CallFire. This is required to use any CallFire module.'),
 	);
+	$form['callfire_default_from_num'] = array(
+		'#type' => 'textfield',
+		'#title' => t('"From" phone number'),
+		'#default_value' => variable_get('callfire_default_from_num', ''),
+    '#summary' => t('Default "from" phone number is currently set as: <br /> %from', array('%from' => variable_get('callfire_default_from_num', ''))),
+		'#description' =>
+			t("The default phone number to use as the 'sent from' number on CallFire telephony communications. This should be a phone number you have on record with CallFire. Feel free to add dashes or whatever formatting you like; non-digits will be stripped before the number is used."),
+	);
 	$form['callfire_base_url'] = array(
 		'#type' => 'textfield',
 		'#title' => t('Store website base URL'),
@@ -178,23 +186,22 @@ function callfire_services_form() {
   if (is_array($services) && count($services) > 0) {
     foreach ($services as $service) {
 
+			$service_enabled = 'cf_' . $service['id'] . '_enabled';
+			
       $form['cfstable'][$service['id']]['#summary callback'] = 'summarize_form';
 
-      $form['cfstable'][$service['id']][$service['id'] .'_enabled'] = array(
+      $form['cfstable'][$service['id']][$service_enabled] = array(
         '#type' => 'checkbox',
+				'#title' => '<b>' . $service['name'] . ':</b> ' . $service['desc'],
         '#summary callback' => 'summarize_checkbox',
         '#summary arguments' => array(
           t('@service services are enabled.', array('@service' => $service['name'])),
           t('@service services are disabled.', array('@service' => $service['name'])),
         ),
-        '#default_value' => variable_get($service['id'] .'_enabled', FALSE),
-      );
-      $form['cfstable'][$service['id']]['name'] = array(
-        '#value' => $service['name'],
+        '#default_value' => variable_get($service_enabled, FALSE),
       );
 
-      $null = NULL;
-      $service_settings = $service['callback']('settings', $null);
+      $service_settings = $service['callback']();
       if (is_array($service_settings)) {
         $form['service_'. $service['id']] = array(
           '#type' => 'fieldset',
