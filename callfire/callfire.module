@@ -138,7 +138,6 @@ function callfire_menu() {
     'access arguments' => array('access administration pages'),
     'weight' => -5,
     'type' => MENU_LOCAL_TASK,
-    'file' => 'uc_payment.admin.inc',
   );
   
   // page to display and adjust the settings for the services & their features
