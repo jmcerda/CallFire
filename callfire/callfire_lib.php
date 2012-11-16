@@ -16,7 +16,7 @@ define('CALLFIRE_GET_STATS_URL', "https://www.callfire.com/api/rest/broadcast/")
 function cfPost($url, $user, $password, $params = array(),
                 $contentType = 'application/x-www-form-urlencoded') {
 
-	$query = http_build_query($params);
+	$query = http_build_query($params, '', '&');
 	$authentication = 'Authorization: Basic '.base64_encode("$user:$password");
 	$http = curl_init($url);
 	curl_setopt($http, CURLOPT_SSL_VERIFYHOST, false);
@@ -37,7 +37,7 @@ function cfPost($url, $user, $password, $params = array(),
  *   allows the retrieval of user-specific data from their system
  */
 function cfGet($url, $user, $password, $params = array(), $contentType = 'plain/text') {
-	$query = http_build_query($params);
+	$query = http_build_query($params, '', '&');
 	$authentication = 'Authorization: Basic '.base64_encode("$user:$password");
 	$http = curl_init($url);
 	curl_setopt($http, CURLOPT_SSL_VERIFYHOST, false);
