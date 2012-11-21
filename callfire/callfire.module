@@ -67,11 +67,32 @@ function callfire_settings_form_validate($form, &$form_state) {
 
 	// validate the necessary settings
 	// the store website base url shouldn't be blank
-	$c = $form_state['values']['callfire_base_url'];
-	if ($c == '') {
+	$url = $form_state['values']['callfire_base_url'];
+	$login = $form_state['values']['callfire_login'];
+	$password = $form_state['values']['callfire_password'];
+	
+	if ($url == '') {
 		form_set_error('callfire_base_url', t('The website base URL should not be blank; please use the recommended URL rather than none.'));
 	}
-
+	elseif ((strpos($url, 'https') !== FALSE) && ($login != '') & ($password != '')) {
+	
+		variable_set('callfire_login', $login);
+		variable_set('callfire_password', $password);
+		
+		$subscriptions = cfGetSubscriptions();
+		
+		// remove previous subscriptions, in case any no-longer-accessed ones are present
+		foreach ($subscriptions as $subscription) {
+			$id = $subscription->id;
+			$delete_request = array('Id' => $id);
+			$response = $client->deleteSubscription($delete_request);
+		}
+		
+		$notify_url = $url . '/' . CALLFIRE_NOTIFY_URL;
+		
+		// create a new subscription
+		$response = cfPostbackSubscribe($notify_url);
+	}
 }
 
 

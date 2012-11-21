@@ -273,10 +273,10 @@ function cfGetBroadcastInfo($id, $call_info = false) {
 
 /**
  * cfPostbackSubscribe - subscribes a website URL (one capable of receiving
- *   and responding to HTTP/S POST requests), so that CallFire can make use
+ *   and responding to HTTPS POST requests), so that CallFire can make use
  *   of it for 'push' notifications.
  *
- * @param - $url: the HTTP/S URL of your website that will be
+ * @param - $url: the HTTPS URL of your website that will be
  *   responding to the postbacks
  *
  */
@@ -367,7 +367,7 @@ function cfPostbackUnsubscribe($id) {
   }
 
   // construct the request for the unsubscription
-  $delete_request = array('ID' => $id);
+  $delete_request = array('Id' => $id);
   
   $response = $client->deleteSubscription($delete_request);
   
@@ -388,6 +388,32 @@ foreach($subscriptions as $sub) {
 }
 -----------------------------------------------------------
 */
+
+
+/**
+ * cfGetSubscriptions - queries CallFire for all the postback subscriptions
+ *   the given login/password has with them, returning either an array of
+ *   objects if one or more subscriptions, or a boolean FALSE if none.
+ *
+ */
+function cfGetSubscriptions() {
+
+  $client = _new_cf_soap_client('SOAP_1_2');
+
+  $response = $client->querySubscriptions();
+
+	if ($response === FALSE) {
+		$ret = FALSE;
+	}
+	elseif (is_array($response->Subscription)) {
+		$ret = $response->Subscription;
+	}
+	else {
+		$ret = array($response->Subscription);
+	}
+	
+  return $ret;
+}
 
 
 /**
