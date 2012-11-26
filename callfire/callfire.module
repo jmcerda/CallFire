@@ -82,10 +82,14 @@ function callfire_settings_form_validate($form, &$form_state) {
 		$subscriptions = cfGetSubscriptions();
 		
 		// remove previous subscriptions, in case any no-longer-accessed ones are present
-		foreach ($subscriptions as $subscription) {
-			$id = $subscription->id;
-			$delete_request = array('Id' => $id);
-			$response = $client->deleteSubscription($delete_request);
+		if ($subscriptions) {
+			foreach ($subscriptions as $subscription) {
+				$id = $subscription->id;
+				//$delete_request = array('Id' => $id);
+				if ($id) {
+					$response = cfPostbackUnsubscribe($id); //$client->deleteSubscription($delete_request);
+				}
+			}
 		}
 		
 		$notify_url = $url . '/' . CALLFIRE_NOTIFY_URL;
