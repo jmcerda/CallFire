@@ -1,0 +1,4 @@
+name = "CallFire"
+description = "Enables other connectivity modules that use CallFire's API."
+package = CallFire
+core = 6.x

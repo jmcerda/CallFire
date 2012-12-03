@@ -1,0 +1,308 @@
+<?php
+
+/**
+ * @file
+ * Enabling other various telephony modules used through CallFire.com's services.
+ *
+ * @creation November 2012
+ * @author Rod Jackson (RDJ)
+ */
+ 
+require_once("callfire_lib.php");
+require_once("callfire.pages.inc");
+
+define('CALLFIRE_WEBSITE', "https://callfire.com");
+ 
+define('CALLFIRE_NOTIFY_URL', "cf/notify");
+
+
+/**
+ * Settings form for the CallFire module.
+ */
+function callfire_settings_form() {
+
+	global $base_url;
+
+	$form = array();
+
+	$form['callfire_login'] = array(
+		'#type' => 'textfield',
+		'#title' => t('CallFire login'),
+		'#default_value' => variable_get('callfire_login', ''),
+    '#summary' => t('CallFire login is currently set as: <br /> %login', array('%login' => variable_get('callfire_login', ''))),
+		'#description' => t('The app login provided by CallFire. This is required to use any CallFire module.'),
+	);
+	$form['callfire_password'] = array(
+		'#type' => 'textfield',
+		'#title' => t('CallFire password'),
+		'#default_value' => variable_get('callfire_password', ''),
+    '#summary' => t('CallFire password is currently set as: <br /> %password', array('%password' => variable_get('callfire_password', ''))),
+		'#description' => t('The app password provided by CallFire. This is required to use any CallFire module.'),
+	);
+	$form['callfire_default_from_num'] = array(
+		'#type' => 'textfield',
+		'#title' => t('"From" phone number'),
+		'#default_value' => variable_get('callfire_default_from_num', ''),
+    '#summary' => t('Default "from" phone number is currently set as: <br /> %from', array('%from' => variable_get('callfire_default_from_num', ''))),
+		'#description' =>
+			t("The default phone number to use as the 'sent from' number on CallFire telephony communications. This should be a phone number you have on record with CallFire. Feel free to add dashes or whatever formatting you like; non-digits will be stripped before the number is used."),
+	);
+	$form['callfire_base_url'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Store website base URL'),
+		'#default_value' => variable_get('callfire_base_url', $base_url),
+    '#summary' => t('Store website base URL is currently set as: <br /> %url', array('%url' => variable_get('callfire_base_url', $base_url))),
+		'#description' =>
+			t("Base URL of the store website. It is presented here primarily as an option to force the use of the 'https' version of your website if it doesn't automatically use it. CallFire ") . '<b>' . t('must') . '</b>' . t(" use 'https', so please add the 's' if needed. For reference, the store's internal base URL is normally: ") . '<b>' . $base_url . '</b>',
+	);
+
+	return system_settings_form($form);
+}
+
+
+/**
+ * Validate CallFire settings.
+ */
+function callfire_settings_form_validate($form, &$form_state) {
+
+	// validate the necessary settings
+	// the store website base url shouldn't be blank
+	$url = $form_state['values']['callfire_base_url'];
+	$login = $form_state['values']['callfire_login'];
+	$password = $form_state['values']['callfire_password'];
+	
+	if ($url == '') {
+		form_set_error('callfire_base_url', t('The website base URL should not be blank; please use the recommended URL rather than none.'));
+	}
+	elseif ((strpos($url, 'https') !== FALSE) && ($login != '') & ($password != '')) {
+	
+		variable_set('callfire_login', $login);
+		variable_set('callfire_password', $password);
+		
+		$subscriptions = cfGetSubscriptions();
+		
+		// remove previous subscriptions, in case any no-longer-accessed ones are present
+		if ($subscriptions) {
+			foreach ($subscriptions as $subscription) {
+				$id = $subscription->id;
+				//$delete_request = array('Id' => $id);
+				if ($id) {
+					$response = cfPostbackUnsubscribe($id); //$client->deleteSubscription($delete_request);
+				}
+			}
+		}
+		
+		$notify_url = $url . '/' . CALLFIRE_NOTIFY_URL;
+		
+		// create a new subscription
+		$response = cfPostbackSubscribe($notify_url);
+	}
+}
+
+
+/**
+ * Display help and module information
+ * @param path which path of the site we're displaying help
+ * @param arg array that holds the current path as would be returned from arg() function
+ * @return help text for the path
+ */
+function callfire_help($path, $arg) {
+	$o = '';  // declare your output variable
+	switch ($path) {
+		case "admin/help#callfire":
+			$o .= '<p>'. 
+				t('Enables the use of other service-specific CallFire modules.') .'</p>';
+			break;
+	}
+	return $o;
+}
+
+
+/**
+ * Implements hook_menu().
+ */
+function callfire_menu() {
+
+	$items = array();
+	
+	// Always accessible, accepts POST data from CallFire's
+	// servers when being sent a postback.
+	$items[CALLFIRE_NOTIFY_URL] = array(
+		'title' => 'CallFire Notifications',
+		'access callback' => TRUE,
+		'page callback' => 'callfire_notification',
+		'type' => MENU_CALLBACK,
+		'file' => 'callfire.pages.inc',
+	);
+
+	// parent settings menu
+	$items['admin/settings/callfire'] = array(
+		'title' => t('CallFire'),
+		'description' => t('Basic settings of the CallFire module, and individual enabling of services.'),
+		'page callback' => 'callfire_settings_overview',
+		'access arguments' => array('access administration pages'),
+		'type' => MENU_NORMAL_ITEM,
+	);
+
+	// overview page for the settings (the default)
+  $items['admin/settings/callfire/overview'] = array(
+    'title' => 'Overview',
+    'description' => 'View the general CallFire settings.',
+		'page callback' => 'callfire_settings_overview',
+    'access arguments' => array('access administration pages'),
+    'weight' => -10,
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+  
+  // page to edit the settings
+  $items['admin/settings/callfire/edit'] = array(
+    'title' => 'Edit',
+    'description' => 'Edit the general CallFire settings.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('callfire_settings_form'),
+    'access arguments' => array('access administration pages'),
+    'weight' => -5,
+    'type' => MENU_LOCAL_TASK,
+  );
+  
+  // page to display and adjust the settings for the services & their features
+  $items['admin/settings/callfire/services'] = array(
+    'title' => 'Services',
+    'description' => 'Enable and disable CallFire services and their features.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array ('callfire_services_form'),
+    'access arguments' => array('access administration pages'),
+    'weight' => 0,
+    'type' => MENU_LOCAL_TASK,
+  );
+
+	return $items;
+}
+
+
+/**
+ * Displays an overview of the CallFire settings.
+ */
+function callfire_settings_overview() {
+  // Theme all the pages beneath this path into summary overviews.
+  return theme('summary_overview', summarize_child_form_pages('admin/settings/callfire'));
+}
+
+
+/**
+ * Displays the CallFire service modules, both to allow
+ * enabling and to allow modifying their settings.
+ */
+function callfire_services_form() {
+
+  $services = _callfire_service_list();
+
+  $form['services_info'] = array(
+    '#value' => '<div><strong>'. t('CallFire services') .'</strong><br />'
+              . t('The settings forms below are for the various CallFire services defined by enabled modules. Click a name to expand its options and adjust the settings accordingly.') .'</div><br />',
+  );
+
+  $form['cfstable'] = array(
+    '#theme' => 'callfire_services_table',
+    '#summary callback' => 'summarize_form',
+  );
+
+  if (is_array($services) && count($services) > 0) {
+    foreach ($services as $service) {
+
+			$service_enabled = 'cf_' . $service['id'] . '_enabled';
+			
+      $form['cfstable'][$service['id']]['#summary callback'] = 'summarize_form';
+
+      $form['cfstable'][$service['id']][$service_enabled] = array(
+        '#type' => 'checkbox',
+				'#title' => '<b>' . $service['name'] . ':</b> ' . $service['desc'],
+        '#summary callback' => 'summarize_checkbox',
+        '#summary arguments' => array(
+          t('@service services are enabled.', array('@service' => $service['name'])),
+          t('@service services are disabled.', array('@service' => $service['name'])),
+        ),
+        '#default_value' => variable_get($service_enabled, FALSE),
+      );
+
+      $service_settings = $service['callback']();
+      if (is_array($service_settings)) {
+        $form['service_'. $service['id']] = array(
+          '#type' => 'fieldset',
+          '#summary callback' => 'summarize_null',
+          '#title' => t('!service settings', array('!service' => $service['name'])),
+          '#collapsible' => TRUE,
+          '#collapsed' => TRUE,
+        );
+        $form['service_'. $service['id']] = array_merge($form['service_'. $service['id']], $service_settings);
+      }
+    }
+  }
+	else {
+		// no services found; let the admin know this
+		$form['callfire_no_services'] = array(
+      '#type' => 'item',
+      '#summary callback' => 'summarize_element',
+      '#summary' => '<b>No CallFire service modules appear to be loaded.</b>',
+			'#description' => t('You will need to enable one or more CallFire service modules (such as CF SMS) to make use of the CallFire module.') . '<br /><br />',
+      '#value' => '<b>ATTENTION: No CallFire service modules appear to be loaded.</b>',
+    );
+
+		// return early, no need to add standard buttons to the form
+		return $form;
+	}
+
+  return system_settings_form($form);
+}
+
+
+/**
+ * Theme the CallFire services form
+ */
+function theme_callfire_services_table($form) {
+  $header = array(t('Enabled'), t('Service'));
+
+  foreach (element_children($form) as $service) {
+    $rows[] = array(
+      array('data' => drupal_render($form[$service]['callfire_service_'. $service]), 'align' => 'center'),
+      drupal_render($form[$service]['name']),
+    );
+  }
+
+  if (empty($rows)) {
+    $rows[] = array(
+      array('data' => t('No CallFire services founds.'), 'colspan' => 3),
+    );
+  }
+
+  return theme('table', $header, $rows);
+}
+
+
+/**
+ * Build a list of CallFire services defined in the enabled modules.
+ */
+function _callfire_service_list($action = NULL) {
+  static $services;
+
+  if (count($services) > 0 && $action !== 'rebuild') {
+    return $services;
+  }
+
+  $services = module_invoke_all('callfire_service');
+
+  return $services;
+}
+
+
+/**
+ * Return data from a CallFire service by service ID and the array key.
+ */
+function _callfire_service_data($service_id, $key) {
+  $services = _callfire_service_list();
+  foreach ($services as $service) {
+    if ($service['id'] == $service_id) {
+      return isset($service[$key]) ? $service[$key] : NULL;
+    }
+  }
+}
