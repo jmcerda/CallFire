@@ -176,6 +176,17 @@ function callfire_menu() {
     'type' => MENU_LOCAL_TASK,
   );
 
+  // page to allow admins to perform actions for specific service features
+  $items['admin/settings/callfire/actions'] = array(
+    'title' => 'Actions',
+    'description' => 'Perform actions for specific CallFire service features.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array ('callfire_actions_form'),
+    'access arguments' => array('access administration pages'),
+    'weight' => 5,
+    'type' => MENU_LOCAL_TASK,
+  );
+
 	return $items;
 }
 
@@ -253,7 +264,7 @@ function callfire_services_form() {
 	}
 
   return system_settings_form($form);
-}
+} // end function - callfire_services_form
 
 
 /**
@@ -280,6 +291,64 @@ function theme_callfire_services_table($form) {
 
 
 /**
+ * Presents a form allowing admins to perform actions associated
+ * with specific CallFire service features, for all enabled services.
+ */
+function callfire_actions_form() {
+
+  //$actions = _callfire_action_list();
+
+  $form['actions_info'] = array(
+    '#value' => '<div><strong>'. t('CallFire actions') .'</strong><br />'
+              . t('The forms below are for performing actions associated with various CallFire service features among enabled services. Click a heading to expand its sub-form and access the associated action.') .'</div><br />',
+  );
+
+  $form['cfatable'] = array(
+    '#theme' => 'callfire_actions_table',
+    //'#summary callback' => 'summarize_form',
+  );
+
+  if (is_array($actions) && count($actions) > 0) {
+    foreach ($actions as $action) {
+
+			if ($action['action_currently_enabled']) {
+			
+				$action_id = $action['id'];
+				
+				$form['cfatable'][$action_id] = array(
+					'#type' => 'fieldset',
+					'#title' => $action['name'],
+					'#collapsible' => TRUE,
+					'#collapsed' => TRUE,
+				);
+
+				$action_fields = $action['fields']();
+				foreach ($action_fields as $key => $field) {
+					$form['cfatable'][$action_id][$key] = $field;
+				}
+				
+				$form['cfatable'][$action_id] = system_settings_form($form['cfatable'][$action_id]);
+			}
+    }
+  }
+	else {
+		// no actions available; let the admin know this
+		$form['callfire_no_actions'] = array(
+      '#type' => 'item',
+			'#description' => t('You will have access to actions when any appropriate CallFire service features are enabled.') . '<br /><br />',
+      '#value' => '<strong>ATTENTION: No CallFire actions are available for enabled services.</strong>',
+    );
+
+		// return early, no need to add standard buttons to the form
+		return $form;
+	}
+
+  return system_settings_form($form);
+
+} // end function - callfire_actions_form
+
+
+/**
  * Build a list of CallFire services defined in the enabled modules.
  */
 function _callfire_service_list($action = NULL) {
@@ -292,6 +361,22 @@ function _callfire_service_list($action = NULL) {
   $services = module_invoke_all('callfire_service');
 
   return $services;
+}
+
+
+/**
+ * Build a list of CallFire actions defined in the enabled modules.
+ */
+function _callfire_actions_list($action = NULL) {
+  static $callfire_actions;
+
+  if (count($callfire_actions) > 0 && $action !== 'rebuild') {
+    return $callfire_actions;
+  }
+
+  $callfire_actions = module_invoke_all('callfire_actions');
+
+  return $callfire_actions;
 }
 
 
